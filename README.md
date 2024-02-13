@@ -1,6 +1,7 @@
 @BloodhoundRBot is a Python Telegram bot designed for convenient image search by text and reverse image search.
 
-  ![image](https://github.com/rumiantsevaa/Bloodhound/assets/89034072/aac17b60-4e16-4685-b7c9-bdbbc23db4ea)
+  ![1](https://github.com/rumiantsevaa/Bloodhound_Telegram_Bot/assets/89034072/ef195d97-31fa-472e-8b5b-cb8b8fea7f29)
+
 
 Updated version supports NEW search method: reverse image search using the Yandex Reverse Image Search API.
 
@@ -12,7 +13,8 @@ Key Features:
 
 Allows users to send text queries to search for images without usage restrictions.
 Utilizes the Pixabay API to retrieve corresponding images.
-![Screenshot 2024-02-07 125036](https://github.com/rumiantsevaa/Bloodhound/assets/89034072/13186cce-c73b-4349-8691-355c25865d09)
+
+![2](https://github.com/rumiantsevaa/Bloodhound_Telegram_Bot/assets/89034072/d2e33f67-8ee5-4d6f-af95-b2cd3c9d7f16)
 
 
 Text search for Royalty Free images is supported in both English and Russian.
@@ -21,20 +23,24 @@ Text search for Royalty Free images is supported in both English and Russian.
 
 Allows users to send photos for reverse image search.
 Utilizes the Google Reverse Image Search API through the SerpApi service.
-![Screenshot 2024-02-07 124954](https://github.com/rumiantsevaa/Bloodhound/assets/89034072/ce447266-c813-4fdc-a3dd-4d38c4e30995)
+
+![3](https://github.com/rumiantsevaa/Bloodhound_Telegram_Bot/assets/89034072/65e8e545-f96c-43f7-95b3-07f8defd9d63)
+
+
 
 * Yandex Reverse Image Search
 
 Allows users to send photos for reverse image search.
 Utilizes the Yandex Reverse Image Search API through the SerpApi service.
-![image](https://github.com/rumiantsevaa/Bloodhound/assets/89034072/112a2a81-5500-4004-9070-576154324206)
+
+![4](https://github.com/rumiantsevaa/Bloodhound_Telegram_Bot/assets/89034072/6d8437fb-2fba-4f3e-b3a5-a50fdfa7fbad)
 
 
 Button Navigation:
 
 Users can interact with the bot using a convenient button menu.
-![image](https://github.com/rumiantsevaa/Bloodhound/assets/89034072/f7818732-2804-4739-ae55-a34f5bfac624)
 
+![5](https://github.com/rumiantsevaa/Bloodhound_Telegram_Bot/assets/89034072/4181612c-2ef5-47c5-beb1-dfc80f2147a5)
 
 
 Expand the button menu, choose the desired command. Follow the bot's instructions to submit queries or images.
