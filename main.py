@@ -1,14 +1,26 @@
-# Импорт всего для взаимодействия с Telegram
 import telebot
 from telebot import types
-from config import TELEGRAM_TOKEN
 
-from free_search import perform_pixabay_search
-from ultimate_search import perform_google_reverse_image_search
-from yandex_search import perform_yandex_reverse_image_search
+from config import *
+from photo_file_ids import *
+
+import random
 
 # Создаем бота для Telegram
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
+
+# URL для отправки изображения
+url = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto'
+
+# Множество для хранения обработанных идентификаторов файлов
+processed_photo_ids = set()
+
+# ID группы
+GROUP_ID = bot.get_chat("-100xxxxxx").id
+PERSONAL_CHAT_ID = bot.get_chat("xxxxx").id
+# declare global variables outside any function by using the global keyword
+global player1
+global player2
 
 
 # Команда /help
@@ -16,187 +28,110 @@ bot = telebot.TeleBot(TELEGRAM_TOKEN)
 def help_command(message):
     help_message = (
 
-        "Команда 💫 Поиск Royalty Free изображений  позволяет вам искать изображения не "
-        "ограниченные правами на использование. Поиск поддерживается на русском и английском языках, "
-        "введите текстовый запрос, "
-        "и я найду для вас соответствующие изображения с использованием Pixabay API.\n\n"
-        "Команда 💫 Поиск Google Reverse Images реализует поиск изображений по отправленному фото "
-        "с использованием Google Reverse Image Search API.\n\n"
-        "Команда 💫 Поиск Yandex Reverse Images реализует поиск изображений по отправленному фото "
-        "с использованием Yandex Reverse Image Search API.\n\n"
-        "После ввода любого запроса поиска 🔎, я отправлю вам результаты отдельными сообщениями ✉️.\n\n"
+        "Команда 💫 DIXIT: Начать новую игру 💫 позволяет начать игру в DIXIT: 9 lives mod. Мод представляет из себя "
+        "версию"
+        "игры для двоих, которая проходит в девять раундов 🎲\n\n"
+        "♦️ ПРАВИЛА ИГРЫ в DIXIT: 9 lives mod: ♦️\n"
+        "Тут будет МНОГА БУКАФФ\n\n"
+        "Команда 💫 Получить Telegram Photo ID 💫 реализует загрузку фотографии на сервер Telegram и получение "
+        "идентификатора.\n\n"
         "Для перезапуска бота вы всегда можете ввести /start \n\n"
         "Больше информации обо мне вы сможете найти посетив.."
     )
     bot.send_message(message.chat.id, help_message)
 
 
-@bot.message_handler(commands=['start', 'help'])
-def start(message):
-    start_message = (
-        "Привет, меня зовут Bloodhound, я скромный бот ищейка🔎.\n"
-        "Разверните меню кнопок для выбора интересующей команды.\n"
-        "Вы также можете ввести /help чтобы узнать обо мне больше.\n"
-        " \n"
-        "Выбирайте кнопку и полетели🚀🚀🚀"
-    )
+@bot.message_handler(commands=['start'])
+def start_button_handler(message):
+    # Приветствие пользователя
+    start_message = ("Здраствуйте! Я бот для игры в DIXIT: 9 lives mod. Мне кажется мы уже где-то виделись🤔 Но, "
+                     "я совсем этого не помню. Чтобы начать игру,"
+                     "нажмите кнопку 💫 DIXIT: Начать новую игру 💫 или узнайте больше обо мне по команде /help.")
 
-    # Создаем клавиатуру с кнопками
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    button1 = types.KeyboardButton("Поиск Royalty Free изображений")
-    button2 = types.KeyboardButton("Поиск Google Reverse Images")
-    button3 = types.KeyboardButton("Поиск Yandex Reverse Images")
-    markup.add(button1, button2, button3)
+    # Создаем клавиатуру с кнопкой "Старт"
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    button1 = types.KeyboardButton("DIXIT: Начать новую игру")
+    button2 = types.KeyboardButton("Получить Telegram Photo ID")
+    markup.add(button1, button2)
 
+    # Отправляем клавиатуру пользователю
     bot.send_message(message.chat.id, start_message, reply_markup=markup)
 
 
-# Команда /yandexbhsearch
+@bot.message_handler(commands=['random_photos_generator'])
+def photo_generator_command(message):
+    global player1
+    bot.send_message(PERSONAL_CHAT_ID, message.from_user.username + ", Вы ♦️ Игрок 1 ♦️ Попросите партнера ввести /join"
+                                                                    "для"
+                                                                    "получения статуса ♠️ Игрок 2 ♠️")
+    #    bot.forward_message(GROUP_ID, message.chat.id, message.message_id)
+    player1 = message.from_user.username
 
-@bot.message_handler(commands=['yandexbhsearch'])
-def yandex_bh_search(message):
-    bot.send_message(message.chat.id, "Пожалуйста, отправьте мне фото для поиска.")
-    bot.register_next_step_handler(message, process_yandex_bh_search)
+
+def handle_join(message: types.Message):
+    global player2
+    if message.text in trigger_list:
+        bot.send_message(GROUP_ID, message.from_user.username + " - Вы ♠️ Игрок 2 ♠️")
+        player2 = message.from_user.username
+        bot.send_message(GROUP_ID, message.from_user.username + " - получил статус ♠️ Игрок 2 ♠️")
+
+    # Создаём массив айди фотографий, девять элементов
+    array_of_ids = []
+    for i in range(9):
+        random_photo_id = random.choice(photo_file_ids)
+        array_of_ids.append(random_photo_id)
+
+    # Отправляем массив айди для общего чата с к-м элементов : 9
+    bot.send_media_group(GROUP_ID, [types.InputMediaPhoto(media) for media in array_of_ids])
+
+    # Массив теряет три элемента,  мешается и отправляется Игроку 1
+    # Антихитрин
+    random.shuffle(array_of_ids)
+    del array_of_ids[6:9]
+    random.shuffle(array_of_ids)
+    bot.send_media_group(PERSONAL_CHAT_ID, [types.InputMediaPhoto(media) for media in array_of_ids])
+
+    # Отправляем текст "Выбирайте карточку, не говорите оппоненту какую вы выбрали."
+    bot.send_message(PERSONAL_CHAT_ID, player1 + "  , выбирайте карточку, не говорите оппоненту какую вы выбрали.")
+    bot.send_message(GROUP_ID, player2 + " , готовьтесь слушать обьяснения ♦️ Игрока 1 ♦️")
 
 
-# Добавляем функцию обработки следующего шага
-def process_next_step_yandex_bh_search(message):
-    if message.text.lower() == '/start':
-        start(message)
+@bot.message_handler(commands=['photo_save'])
+def photo_save_command(message):
+    bot.send_message(chat_id=message.chat.id, text="Пожалуйста, отправьте мне фотографии, ID которых вы хотите "
+                                                   "сохранить.")
+    bot.register_next_step_handler(message, handle_photos)
+
+
+# Обработка фотографий
+def handle_photos(message):
+    # Выбираем максимальное разрешение
+    photo = max(message.photo, key=lambda x: x.width * x.height)
+    file_id = photo.file_id
+
+    # Проверка наличия идентификатора в множестве
+    if file_id not in processed_photo_ids:
+        processed_photo_ids.add(file_id)
+        bot.send_message(chat_id=message.chat.id, text=f"Идентификатор вашей фотографии: {file_id}")
     else:
-        # Если не /start, предполагаем, что это текстовый запрос для нового поиска
-        process_yandex_bh_search(message)
-
-
-def process_yandex_bh_search(message):
-    chat_id = message.chat.id
-
-    # Check if the user sent a photo
-    if not message.photo:
-        bot.send_message(chat_id, "Пожалуйста, отправьте фото.")
-        return
-
-    # Get the file_id of the largest photo
-    file_id = message.photo[-1].file_id
-
-    # Get the file path using file_id
-    file_path = bot.get_file(file_id).file_path
-
-    # Construct the public URL for the photo
-    photo_url = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{file_path}"
-
-    # Perform Google Reverse Image Search using SerpApi
-    search_results = perform_yandex_reverse_image_search(photo_url)
-
-    # Send the search results as separate messages
-    for result in search_results:
-        bot.send_message(chat_id, result)
-
-    # Спрашиваем, хочет ли пользователь выполнить повторный поиск
-    bot.send_message(chat_id, "Если желаете выполнить повторный поиск, отправьте новое фото. "
-                              "Или нажмите /start для выбора новой команды.")
-    bot.register_next_step_handler(message, process_next_step_yandex_bh_search)
-
-
-# Команда /ultimatebhsearch
-@bot.message_handler(commands=['ultimatebhsearch'])
-def ultimate_bh_search(message):
-    bot.send_message(message.chat.id, "Пожалуйста, отправьте мне фото для поиска.")
-    bot.register_next_step_handler(message, process_ultimate_bh_search)
-
-
-# Добавляем функцию обработки следующего шага
-def process_next_step_ultimate_bh_search(message):
-    if message.text.lower() == '/start':
-        start(message)
-    else:
-        # Если не /start, предполагаем, что это текстовый запрос для нового поиска
-        process_ultimate_bh_search(message)
-
-
-def process_ultimate_bh_search(message):
-    chat_id = message.chat.id
-
-    # Check if the user sent a photo
-    if not message.photo:
-        bot.send_message(chat_id, "Пожалуйста, отправьте фото.")
-        return
-
-    # Get the file_id of the largest photo
-    file_id = message.photo[-1].file_id
-
-    # Get the file path using file_id
-    file_path = bot.get_file(file_id).file_path
-
-    # Construct the public URL for the photo
-    photo_url = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{file_path}"
-
-    # Perform Google Reverse Image Search using SerpApi
-    search_results = perform_google_reverse_image_search(photo_url)
-
-    # Send the search results as separate messages
-    for result in search_results:
-        bot.send_message(chat_id, result)
-
-    # Спрашиваем, хочет ли пользователь выполнить повторный поиск
-    bot.send_message(chat_id, "Если желаете выполнить повторный поиск, отправьте новое фото. "
-                              "Или нажмите /start для выбора новой команды.")
-    bot.register_next_step_handler(message, process_next_step_ultimate_bh_search)
-
-
-# Команда /freebhsearch
-@bot.message_handler(commands=['freebhsearch'])
-def free_bh_search(message):
-    bot.send_message(message.chat.id, "Напишите текстовый запрос желаемого роялти фри фото.")
-    bot.register_next_step_handler(message, process_free_bh_search)
-
-
-def process_free_bh_search(message):
-    chat_id = message.chat.id
-
-    query = message.text
-
-    # Check if the user provided a non-empty query
-    if not query:
-        bot.send_message(chat_id, "Мне не удалось выполнить ваш запрос. Пожалуйста, введите текстовый запрос.")
-        return
-
-    # Perform Pixabay search
-    search_results = perform_pixabay_search(query)
-
-    # Send each link as a separate message
-    for result in search_results:
-        bot.send_message(chat_id, result)
-
-    # Спрашиваем, хочет ли пользователь выполнить повторный поиск
-    bot.send_message(chat_id, "Если желаете выполнить повторный поиск, введите новый текстовый запрос. "
-                              "Или нажмите /start для выбора новой команды.")
-    bot.register_next_step_handler(message, process_next_step_free_bh_search)
-
-
-def process_next_step_free_bh_search(message):
-    if message.text.lower() == '/start':
-        start(message)
-    else:
-        # Если не /start, предполагаем, что это текстовый запрос для нового поиска
-        process_free_bh_search(message)
+        bot.send_message(chat_id=message.chat.id,
+                         text=f"Идентификатор {file_id} уже обработан. Дубликаты не выводятся.")
 
 
 # Обработка любых текстовых сообщений
 @bot.message_handler(func=lambda message: True, content_types=['text'])
 def handle_text(message):
-    if message.text.lower() == 'поиск royalty free изображений':
-        free_bh_search(message)
-    elif message.text.lower() == 'поиск google reverse images':
-        ultimate_bh_search(message)
-    elif message.text.lower() == 'поиск yandex reverse images':
-        yandex_bh_search(message)
+    if message.text.lower() == 'dixit: начать новую игру':
+        photo_generator_command(message)
+    elif message.text.lower() == 'получить telegram photo id':
+        photo_save_command(message)
+    elif message.text.lower() == '/join':
+        handle_join(message)
     elif message.text.lower() == 'привет':
         bot.send_message(message.chat.id, "Привет! Чтобы начать, нажмите /start")
     else:
         bot.send_message(message.chat.id, "Я вас не понимаю. Нажмите /start для списка команд.")
 
 
-# Start the bot polling
+# Запуск бота
 bot.polling(none_stop=True, interval=0)
-
