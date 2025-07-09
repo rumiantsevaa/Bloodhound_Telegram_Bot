@@ -6,6 +6,9 @@ from config import TELEGRAM_TOKEN
 from free_search import perform_pixabay_search
 from ultimate_search import perform_google_reverse_image_search
 from yandex_search import perform_yandex_reverse_image_search
+from db import init_db, can_use_search, update_usage
+
+init_db()
 
 # Создаем бота для Telegram
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
@@ -15,18 +18,14 @@ bot = telebot.TeleBot(TELEGRAM_TOKEN)
 @bot.message_handler(commands=['help'])
 def help_command(message):
     help_message = (
-
-        "Команда 💫 Поиск Royalty Free изображений  позволяет вам искать изображения не "
-        "ограниченные правами на использование. Поиск поддерживается на русском и английском языках, "
-        "введите текстовый запрос, "
-        "и я найду для вас соответствующие изображения с использованием Pixabay API.\n\n"
-        "Команда 💫 Поиск Google Reverse Images реализует поиск изображений по отправленному фото "
-        "с использованием Google Reverse Image Search API.\n\n"
-        "Команда 💫 Поиск Yandex Reverse Images реализует поиск изображений по отправленному фото "
-        "с использованием Yandex Reverse Image Search API.\n\n"
-        "После ввода любого запроса поиска 🔎, я отправлю вам результаты отдельными сообщениями ✉️.\n\n"
-        "Для перезапуска бота вы всегда можете ввести /start \n\n"
-        "Больше информации обо мне вы сможете найти посетив https://github.com/rumiantsevaa/Bloodhound_Telegram_Bot"
+        "Команда 💫 Поиск Royalty Free изображений позволяет вам искать изображения не "
+        "ограниченные правами на использование. Поиск поддерживается на русском и английском языках.\n\n"
+        "Команда 💫 Поиск Google Reverse Images реализует поиск изображений по отправленному фото.\n\n"
+        "Команда 💫 Поиск Yandex Reverse Images реализует поиск изображений по отправленному фото.\n\n"
+        "Каждый тип поиска доступен раз в сутки из-за ограничений хостинга.\n\n"
+        "Этот бот создан в ознакомительных целях 🔎 ,и не собирает информацию в коммерческих/личных целях 🔐\n\n"
+        "Для перезапуска бота вы всегда можете ввести /start\n\n"
+        "Больше информации обо мне вы сможете найти посетив: https://github.com/rumiantsevaa/Bloodhound_Telegram_Bot"
     )
     bot.send_message(message.chat.id, help_message)
 
@@ -36,9 +35,10 @@ def start(message):
     start_message = (
         "Привет, меня зовут Bloodhound, я скромный бот ищейка🔎.\n"
         "Разверните меню кнопок для выбора интересующей команды.\n"
-        "Вы также можете ввести /help чтобы узнать обо мне больше.\n"
-        " \n"
-        "Выбирайте кнопку и полетели🚀🚀🚀"
+        "Вы также можете ввести /help чтобы узнать обо мне больше.\n\n"
+        "Каждый тип поиска доступен раз в сутки из-за ограничений хостинга 🖥\n"
+        "Этот бот не создан в коммерческих целях и не собирает ваши данные 🔐\n"
+        "Прошу отнестись с пониманием к ограничениям. Благодарю за использование моего бота 🚀🚀🚀"
     )
 
     # Создаем клавиатуру с кнопками
@@ -52,23 +52,18 @@ def start(message):
 
 
 # Команда /yandexbhsearch
-
 @bot.message_handler(commands=['yandexbhsearch'])
 def yandex_bh_search(message):
+    user_id = message.from_user.id
+    if not can_use_search(user_id, 'yandex_reverse'):
+        bot.send_message(message.chat.id, "Извините, лимит на этот тип поиска исчерпан до завтра 😢")
+        return
     bot.send_message(message.chat.id, "Пожалуйста, отправьте мне фото для поиска.")
     bot.register_next_step_handler(message, process_yandex_bh_search)
 
 
-# Добавляем функцию обработки следующего шага
-def process_next_step_yandex_bh_search(message):
-    if message.text.lower() == '/start':
-        start(message)
-    else:
-        # Если не /start, предполагаем, что это текстовый запрос для нового поиска
-        process_yandex_bh_search(message)
-
-
 def process_yandex_bh_search(message):
+    user_id = message.from_user.id
     chat_id = message.chat.id
 
     # Check if the user sent a photo
@@ -85,36 +80,37 @@ def process_yandex_bh_search(message):
     # Construct the public URL for the photo
     photo_url = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{file_path}"
 
-    # Perform Google Reverse Image Search using SerpApi
+    # Perform Yandex Reverse Image Search using SerpApi
     search_results = perform_yandex_reverse_image_search(photo_url)
 
     # Send the search results as separate messages
     for result in search_results:
         bot.send_message(chat_id, result)
 
-    # Спрашиваем, хочет ли пользователь выполнить повторный поиск
-    bot.send_message(chat_id, "Если желаете выполнить повторный поиск, отправьте новое фото. "
-                              "Или нажмите /start для выбора новой команды.")
-    bot.register_next_step_handler(message, process_next_step_yandex_bh_search)
+    update_usage(user_id, 'yandex_reverse')  # Обновляем дату использования
+
+    info_message = (
+        "Каждый тип поиска доступен раз в сутки из-за ограничений хостинга 🖥\n"
+        "Этот бот не создан в коммерческих целях и не собирает ваши данные 🔐 \n"
+        "Прошу отнестись с пониманием к ограничениям. Благодарю за использование моего бота 🚀\n\n"
+        "Для нового поиска нажмите /start"
+    )
+    bot.send_message(chat_id, info_message)
 
 
 # Команда /ultimatebhsearch
 @bot.message_handler(commands=['ultimatebhsearch'])
 def ultimate_bh_search(message):
+    user_id = message.from_user.id
+    if not can_use_search(user_id, 'google_reverse'):
+        bot.send_message(message.chat.id, "Извините, лимит на этот тип поиска исчерпан до завтра 😢")
+        return
     bot.send_message(message.chat.id, "Пожалуйста, отправьте мне фото для поиска.")
     bot.register_next_step_handler(message, process_ultimate_bh_search)
 
 
-# Добавляем функцию обработки следующего шага
-def process_next_step_ultimate_bh_search(message):
-    if message.text.lower() == '/start':
-        start(message)
-    else:
-        # Если не /start, предполагаем, что это текстовый запрос для нового поиска
-        process_ultimate_bh_search(message)
-
-
 def process_ultimate_bh_search(message):
+    user_id = message.from_user.id
     chat_id = message.chat.id
 
     # Check if the user sent a photo
@@ -131,27 +127,37 @@ def process_ultimate_bh_search(message):
     # Construct the public URL for the photo
     photo_url = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{file_path}"
 
-    # Perform Google Reverse Image Search using SerpApi
+    # Perform Google Reverse Image Search
     search_results = perform_google_reverse_image_search(photo_url)
 
     # Send the search results as separate messages
     for result in search_results:
         bot.send_message(chat_id, result)
 
-    # Спрашиваем, хочет ли пользователь выполнить повторный поиск
-    bot.send_message(chat_id, "Если желаете выполнить повторный поиск, отправьте новое фото. "
-                              "Или нажмите /start для выбора новой команды.")
-    bot.register_next_step_handler(message, process_next_step_ultimate_bh_search)
+    update_usage(user_id, 'google_reverse')  # Обновляем дату использования
+
+    info_message = (
+        "Каждый тип поиска доступен раз в сутки из-за ограничений хостинга 🖥\n"
+        "Этот бот не создан в коммерческих целях и не собирает ваши данные 🔐 \n"
+        "Прошу отнестись с пониманием к ограничениям. Благодарю за использование моего бота 🚀\n\n"
+        "Для нового поиска нажмите /start"
+    )
+    bot.send_message(chat_id, info_message)
 
 
 # Команда /freebhsearch
 @bot.message_handler(commands=['freebhsearch'])
 def free_bh_search(message):
-    bot.send_message(message.chat.id, "Напишите текстовый запрос желаемого роялти фри фото.")
+    user_id = message.from_user.id
+    if not can_use_search(user_id, 'pixabay'):
+        bot.send_message(message.chat.id, "Извините, лимит на этот тип поиска исчерпан до завтра 😢")
+        return
+    bot.send_message(message.chat.id, "Напишите текстовый запрос желаемого royalty free фото.")
     bot.register_next_step_handler(message, process_free_bh_search)
 
 
 def process_free_bh_search(message):
+    user_id = message.from_user.id
     chat_id = message.chat.id
 
     query = message.text
@@ -168,18 +174,15 @@ def process_free_bh_search(message):
     for result in search_results:
         bot.send_message(chat_id, result)
 
-    # Спрашиваем, хочет ли пользователь выполнить повторный поиск
-    bot.send_message(chat_id, "Если желаете выполнить повторный поиск, введите новый текстовый запрос. "
-                              "Или нажмите /start для выбора новой команды.")
-    bot.register_next_step_handler(message, process_next_step_free_bh_search)
+    update_usage(user_id, 'pixabay')  # Обновляем дату использования
 
-
-def process_next_step_free_bh_search(message):
-    if message.text.lower() == '/start':
-        start(message)
-    else:
-        # Если не /start, предполагаем, что это текстовый запрос для нового поиска
-        process_free_bh_search(message)
+    info_message = (
+        "Каждый тип поиска доступен раз в сутки из-за ограничений хостинга 🖥\n"
+        "Этот бот не создан в коммерческих целях и не собирает ваши данные 🔐 \n"
+        "Прошу отнестись с пониманием к ограничениям. Благодарю за использование моего бота 🚀\n\n"
+        "Для нового поиска нажмите /start"
+    )
+    bot.send_message(chat_id, info_message)
 
 
 # Обработка любых текстовых сообщений
